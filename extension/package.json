@@ -1,0 +1,35 @@
+{
+	"name": "claude-bridge",
+	"displayName": "Claude Bridge",
+	"description": "Claude Code에서 Antigravity Gemini Agent로 메시지를 전달하는 브릿지",
+	"version": "0.1.0",
+	"publisher": "yth1133",
+	"engines": {
+		"vscode": "^1.90.0"
+	},
+	"activationEvents": [
+		"*"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "claudeBridge.sendMessage",
+				"title": "Claude Bridge: Send Message to Gemini"
+			},
+			{
+				"command": "claudeBridge.showStatus",
+				"title": "Claude Bridge: Show Status"
+			},
+			{
+				"command": "claudeBridge.listCommands",
+				"title": "Claude Bridge: List Available Commands"
+			}
+		]
+	},
+	"__metadata": {
+		"installedTimestamp": 1771910096565,
+		"targetPlatform": "undefined",
+		"size": 10763
+	}
+}
