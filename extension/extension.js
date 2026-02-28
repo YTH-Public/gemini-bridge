@@ -8,14 +8,27 @@ let statusBarItem;
 let watcher;
 /** @type {vscode.FileSystemWatcher} */
 let bridgeDirWatcher;
+/** @type {vscode.FileSystemWatcher} */
+let responseWatcher;
 /** @type {boolean} */
 let processing = false;
 /** @type {NodeJS.Timeout|null} */
 let autoApproveTimer = null;
-/** 자동 승인 폴링 지속 시간 (ms) */
-const AUTO_APPROVE_DURATION = 120000;
+/** @type {NodeJS.Timeout|null} */
+let responseTimer = null;
+/** @type {number} */
+let retryCount = 0;
+/** @type {Set<string>} */
+let knownResponseFiles = new Set();
+
+/** 자동 승인 폴링 지속 시간 (ms) — RESPONSE_TIMEOUT * MAX_RETRIES 보다 길어야 함 */
+const AUTO_APPROVE_DURATION = 600000;
 /** 자동 승인 폴링 간격 (ms) */
 const AUTO_APPROVE_INTERVAL = 2000;
+/** 응답 대기 타임아웃 (ms) — 이 시간 내에 응답 없으면 continue 전송 */
+const RESPONSE_TIMEOUT = 180000;
+/** 최대 continue 재시도 횟수 */
+const MAX_RETRIES = 3;
 
 /**
  * bridge/from-claude/ 디렉토리 경로를 찾는다.
@@ -31,6 +44,37 @@ function findBridgeDir() {
         }
     }
     return null;
+}
+
+/**
+ * bridge/from-gemini/ 디렉토리 경로를 찾는다.
+ */
+function findResponseDir() {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders) return null;
+
+    for (const folder of folders) {
+        const candidate = path.join(folder.uri.fsPath, 'bridge', 'from-gemini');
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    return null;
+}
+
+/**
+ * from-gemini/의 현재 .md 파일 목록을 스냅샷으로 저장한다.
+ */
+function snapshotResponseFiles() {
+    const responseDir = findResponseDir();
+    knownResponseFiles.clear();
+    if (responseDir && fs.existsSync(responseDir)) {
+        for (const f of fs.readdirSync(responseDir)) {
+            if (f.endsWith('.md')) {
+                knownResponseFiles.add(f);
+            }
+        }
+    }
 }
 
 /**
@@ -54,6 +98,10 @@ async function handleTriggerFile(uri) {
             return;
         }
 
+        // 전송 전 응답 파일 스냅샷 (새 응답 감지용)
+        snapshotResponseFiles();
+        retryCount = 0;
+
         updateStatus('$(sync~spin) Sending...');
 
         // 직접 Agent Panel에 프롬프트 전송
@@ -63,9 +111,6 @@ async function handleTriggerFile(uri) {
             await vscode.commands.executeCommand('antigravity.sendTextToChat', content);
         }
 
-        // 자동 승인 폴링 시작 (Gemini의 파일 접근 권한 요청을 자동 승인)
-        startAutoApprove();
-
         // 트리거 파일 삭제
         try {
             fs.unlinkSync(filePath);
@@ -73,13 +118,14 @@ async function handleTriggerFile(uri) {
             // 이미 삭제된 경우 무시
         }
 
-        updateStatus('$(check) Sent');
+        // 자동 승인 + 응답 대기 시작
+        startAutoApprove();
+        startResponseWatch();
+
+        updateStatus('$(sync~spin) Gemini 응답 대기...');
         vscode.window.showInformationMessage(
             `Claude Bridge: 메시지 전송 완료 (${content.length}자)`
         );
-
-        // 2초 후 상태 복원
-        setTimeout(() => updateStatus('$(plug) Claude Bridge'), 2000);
 
     } catch (err) {
         vscode.window.showErrorMessage(`Claude Bridge 오류: ${err.message}`);
@@ -87,6 +133,102 @@ async function handleTriggerFile(uri) {
         setTimeout(() => updateStatus('$(plug) Claude Bridge'), 3000);
     } finally {
         processing = false;
+    }
+}
+
+/**
+ * 응답 대기 + 자동 continue 로직 시작.
+ * from-gemini/에 새 .md 파일이 나타나면 성공.
+ * 타임아웃 내에 안 나타나면 "continue" 전송.
+ */
+function startResponseWatch() {
+    stopResponseWatch();
+
+    // 응답 디렉토리의 파일 생성 감시
+    const responseDir = findResponseDir();
+    if (responseDir) {
+        const pattern = new vscode.RelativePattern(responseDir, '*.md');
+        responseWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+        responseWatcher.onDidCreate((uri) => {
+            const filename = path.basename(uri.fsPath);
+            if (!knownResponseFiles.has(filename)) {
+                onResponseReceived(filename);
+            }
+        });
+    }
+
+    // 타임아웃 타이머 시작
+    scheduleRetry();
+}
+
+/**
+ * 타임아웃 후 "continue" 전송을 예약한다.
+ */
+function scheduleRetry() {
+    if (responseTimer) {
+        clearTimeout(responseTimer);
+    }
+
+    responseTimer = setTimeout(async () => {
+        retryCount++;
+
+        if (retryCount > MAX_RETRIES) {
+            updateStatus('$(error) Gemini 응답 없음');
+            vscode.window.showWarningMessage(
+                `Claude Bridge: ${MAX_RETRIES}회 재시도 후에도 Gemini 응답 없음. 수동 확인 필요.`
+            );
+            stopResponseWatch();
+            stopAutoApprove();
+            setTimeout(() => updateStatus('$(plug) Claude Bridge'), 5000);
+            return;
+        }
+
+        updateStatus(`$(sync~spin) continue 전송 (${retryCount}/${MAX_RETRIES})...`);
+        console.log(`Claude Bridge: 응답 타임아웃, continue 전송 (${retryCount}/${MAX_RETRIES})`);
+
+        try {
+            await vscode.commands.executeCommand('antigravity.sendPromptToAgentPanel', 'continue');
+        } catch (e) {
+            try {
+                await vscode.commands.executeCommand('antigravity.sendTextToChat', 'continue');
+            } catch (e2) {
+                // 전송 실패 무시
+            }
+        }
+
+        // 다음 타임아웃 예약
+        scheduleRetry();
+    }, RESPONSE_TIMEOUT);
+}
+
+/**
+ * Gemini 응답 파일이 감지되었을 때 호출.
+ * @param {string} filename
+ */
+function onResponseReceived(filename) {
+    console.log(`Claude Bridge: Gemini 응답 감지 → ${filename}`);
+    updateStatus('$(check) 응답 완료');
+    vscode.window.showInformationMessage(
+        `Claude Bridge: Gemini 응답 완료 → ${filename}`
+    );
+
+    stopResponseWatch();
+    stopAutoApprove();
+
+    setTimeout(() => updateStatus('$(plug) Claude Bridge'), 3000);
+}
+
+/**
+ * 응답 대기 중지.
+ */
+function stopResponseWatch() {
+    if (responseTimer) {
+        clearTimeout(responseTimer);
+        responseTimer = null;
+    }
+    if (responseWatcher) {
+        responseWatcher.dispose();
+        responseWatcher = null;
     }
 }
 
@@ -186,7 +328,6 @@ function stopAutoApprove() {
     if (autoApproveTimer) {
         clearInterval(autoApproveTimer);
         autoApproveTimer = null;
-        updateStatus('$(plug) Claude Bridge');
     }
 }
 
@@ -320,6 +461,8 @@ function deactivate() {
         watcher.dispose();
     }
     stopBridgeDirWatcher();
+    stopResponseWatch();
+    stopAutoApprove();
     console.log('Claude Bridge 익스텐션 비활성화됨');
 }
 
