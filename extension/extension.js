@@ -6,6 +6,8 @@ const fs = require('fs');
 let statusBarItem;
 /** @type {vscode.FileSystemWatcher} */
 let watcher;
+/** @type {vscode.FileSystemWatcher} */
+let bridgeDirWatcher;
 /** @type {boolean} */
 let processing = false;
 /** @type {NodeJS.Timeout|null} */
@@ -248,10 +250,13 @@ function activate(context) {
 function setupWatcher(context) {
     const bridgeDir = findBridgeDir();
     if (!bridgeDir) {
-        console.log('Claude Bridge: bridge/from-claude/ 디렉토리 미발견, 대기 중...');
+        console.log('Claude Bridge: bridge/from-claude/ 디렉토리 미발견, 디렉토리 생성 감시 시작...');
         updateStatus('$(plug) Claude Bridge (대기)');
+        startBridgeDirWatcher(context);
         return;
     }
+
+    stopBridgeDirWatcher();
 
     const pattern = new vscode.RelativePattern(bridgeDir, '*.trigger');
     watcher = vscode.workspace.createFileSystemWatcher(pattern);
@@ -274,10 +279,47 @@ function setupWatcher(context) {
     }
 }
 
+/**
+ * bridge/from-claude/ 디렉토리 생성을 감시.
+ * /gemini init 후 재시작 없이 자동으로 trigger watcher를 시작한다.
+ * @param {vscode.ExtensionContext} context
+ */
+function startBridgeDirWatcher(context) {
+    stopBridgeDirWatcher();
+
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders) return;
+
+    // workspace 내 bridge/from-claude/ 하위에 파일이 생기면 감지
+    for (const folder of folders) {
+        const pattern = new vscode.RelativePattern(folder, 'bridge/from-claude/*');
+        bridgeDirWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+
+        bridgeDirWatcher.onDidCreate((uri) => {
+            console.log('Claude Bridge: bridge/from-claude/ 감지됨, watcher 전환');
+            stopBridgeDirWatcher();
+            setupWatcher(context);
+        });
+
+        context.subscriptions.push(bridgeDirWatcher);
+    }
+}
+
+/**
+ * bridge 디렉토리 감시 중지.
+ */
+function stopBridgeDirWatcher() {
+    if (bridgeDirWatcher) {
+        bridgeDirWatcher.dispose();
+        bridgeDirWatcher = null;
+    }
+}
+
 function deactivate() {
     if (watcher) {
         watcher.dispose();
     }
+    stopBridgeDirWatcher();
     console.log('Claude Bridge 익스텐션 비활성화됨');
 }
 
