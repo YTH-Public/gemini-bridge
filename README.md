@@ -1,22 +1,46 @@
 # Gemini Bridge
 
-Claude Code와 Antigravity IDE(Gemini)를 연결하는 브릿지. 파일 기반 트리거로 Claude에서 Gemini에게 메시지를 보내고, 응답을 자동 수집한다.
+Claude Code와 Antigravity IDE(Gemini)를 연결하는 브릿지입니다. 파일 기반 트리거로 Claude에서 Gemini에게 메시지를 보내고, 응답을 자동으로 수집합니다.
 
-## 구조
+## 왜 만들었나
+
+AI 코딩 에이전트 하나로는 부족할 때가 있습니다. Claude는 코드 작성과 리팩토링에 강하고, Gemini는 웹 검색, 디자인 리뷰, 이미지 생성에 강합니다. 이 브릿지를 통해 두 AI가 하나의 프로젝트에서 협업할 수 있습니다.
+
+- Claude가 코드를 작성하다가 디자인 피드백이 필요하면 Gemini에게 요청합니다
+- Gemini의 웹 검색 결과를 Claude가 받아서 코드에 반영합니다
+- 이미지 생성, UI 목업 등 Gemini의 강점을 Claude 워크플로우 안에서 활용합니다
+
+## 협업 팁
+
+### 코드 작업은 Claude, 검토와 조사는 Gemini
+
+기본적으로 코드 작성, 수정, 리팩토링은 Claude에게 맡기고, Gemini에게는 디자인 리뷰, 웹 리서치, 이미지 생성 등을 맡기는 것이 효과적입니다.
+
+### 점수 기반 합의
+
+설계 방향이나 기술 선택에서 의견이 갈릴 때, Claude에게 이렇게 지시하면 좋습니다:
+
+> "Gemini에게 이 설계안을 보내고, 각 항목별로 1~10점을 매겨달라고 해.
+> Gemini 응답이 오면 네 점수와 비교해서 합의된 방향으로 진행해."
+
+두 AI의 관점을 합쳐서 더 균형 잡힌 결정을 내릴 수 있습니다.
+
+### Gemini에게 맡기면 좋은 작업
+
+| 작업 | 예시 |
+|------|------|
+| 디자인 리뷰 | "이 페이지 UI 개선점 알려줘" |
+| 웹 리서치 | "2026년 React 상태관리 라이브러리 비교해줘" |
+| 이미지 생성 | "이 앱의 OG 이미지 만들어줘" |
+| 크로스체크 | "이 API 설계가 RESTful 원칙에 맞는지 확인해줘" |
+
+### 실전 워크플로우 예시
 
 ```
-gemini-bridge/
-├── deploy.sh              # WSL + Windows 양쪽 배포 (환경 자동 감지)
-├── src/
-│   ├── bridge.py          # CLI 스크립트 (순수 Python3 stdlib)
-│   ├── SKILL-wsl.md       # WSL Claude Code용 스킬
-│   ├── SKILL-windows.md   # Windows Claude Code용 스킬
-│   ├── GEMINI.md          # Gemini 글로벌 규칙
-│   └── IMPROVEMENTS.md    # 개선 이력
-└── extension/
-    ├── extension.js       # Antigravity 익스텐션
-    ├── package.json
-    └── .vsixmanifest
+1. Claude에게 기능 구현 요청
+2. /gemini 이 코드의 UI 디자인 리뷰해줘 (스크린샷 첨부)
+3. /gemini read 로 Gemini 피드백 확인
+4. Claude에게 피드백 반영 지시
 ```
 
 ## 동작 원리
@@ -37,20 +61,24 @@ Claude Code                    Antigravity IDE
 
 ## 설치
 
-### 1. 클론
+### 1. 클론합니다
 
 ```bash
 git clone https://github.com/ms2116/gemini-bridge.git
 cd gemini-bridge
 ```
 
-### 2. 배포
+### 2. 배포합니다
 
 ```bash
 bash deploy.sh
 ```
 
-Windows(Git Bash)에서 실행하면 WSL + Windows 양쪽에 자동 배포된다.
+Windows(Git Bash)에서 실행하면 WSL + Windows 양쪽에 자동으로 배포됩니다.
+
+### 3. Antigravity를 재시작합니다
+
+Extension이 로드되려면 최초 1회 재시작이 필요합니다. 이후에는 재시작 없이 동작합니다.
 
 ### 배포 대상
 
@@ -60,41 +88,41 @@ Windows(Git Bash)에서 실행하면 WSL + Windows 양쪽에 자동 배포된다
 | `src/SKILL-wsl.md` | `~/.claude/skills/gemini-bridge/SKILL.md` | — |
 | `src/SKILL-windows.md` | — | `~/.claude/skills/gemini-bridge/SKILL.md` |
 | `src/GEMINI.md` | `~/.gemini/GEMINI.md` | `~/.gemini/GEMINI.md` |
-| `extension/*` | `~/.antigravity-server/extensions/yth1133.claude-bridge-0.1.0/` | `~/.antigravity/extensions/yth1133.claude-bridge-0.1.0-universal/` |
+| `extension/*` | `~/.antigravity-server/extensions/...` | `~/.antigravity/extensions/...` |
 
 ## 사용법
 
-Claude Code에서:
+Claude Code에서 아래 명령어를 사용합니다:
 
 ```
-/gemini init                    # 프로젝트에 bridge 구조 초기화
-/gemini <메시지>                # Gemini에게 전송 (fire-and-forget)
-/gemini ask <메시지>            # 전송 + 응답 대기 (자동 재시도 포함)
-/gemini read                    # 최신 응답 읽기
-/gemini list                    # 응답 목록
-/gemini search <키워드>         # 검색
+/gemini init                    # 프로젝트에 bridge 구조를 초기화합니다
+/gemini <메시지>                # Gemini에게 메시지를 전송합니다
+/gemini ask <메시지>            # 전송 후 응답을 기다립니다 (자동 재시도 포함)
+/gemini read                    # 최신 Gemini 응답을 읽습니다
+/gemini list                    # 응답 목록을 확인합니다
+/gemini search <키워드>         # 키워드로 검색합니다
 ```
 
 ## 주요 기능
 
 ### 자동 재시도 (Auto-Continue)
 
-Gemini가 에러로 멈추면 자동으로 "continue"를 보내 복구한다.
+Gemini가 에러로 멈추면 자동으로 "continue"를 보내 복구합니다.
 
-- **Extension 레이어**: `from-gemini/`에 3분간 새 파일이 없으면 → `sendPromptToAgentPanel('continue')` 전송, 최대 3회
-- **bridge.py `ask` 모드**: 동일 로직을 CLI에서 수행 (`--timeout 180 --retries 3`)
+- **Extension**: `from-gemini/`에 3분간 새 파일이 없으면 자동 재전송합니다 (최대 3회)
+- **bridge.py `ask` 모드**: 동일한 로직을 CLI에서 수행합니다 (`--timeout 180 --retries 3`)
 
 ### 자동 디렉토리 감지
 
-`/gemini init` 후 Antigravity 재시작 없이 `bridge/from-claude/` 생성을 자동 감지하여 트리거 감시를 시작한다.
+`/gemini init` 후 Antigravity를 재시작하지 않아도 `bridge/from-claude/` 생성을 자동으로 감지하여 트리거 감시를 시작합니다.
 
 ### 자동 권한 승인
 
-트리거 전송 후 Gemini의 파일 접근 권한 요청을 자동으로 승인한다 (최대 10분).
+트리거 전송 후 Gemini의 파일 접근 권한 요청을 자동으로 승인합니다 (최대 10분).
 
 ### 태스크 카테고리 자동 라우팅
 
-Claude가 메시지 내용을 분석하여 `[TASK: <category>]` 헤더를 자동 부여:
+Claude가 메시지 내용을 분석하여 적절한 `[TASK: <category>]` 헤더를 자동으로 부여합니다:
 
 | 카테고리 | 용도 |
 |---------|------|
@@ -105,11 +133,28 @@ Claude가 메시지 내용을 분석하여 `[TASK: <category>]` 헤더를 자동
 | `verify-check` | 접근성, SEO 체크 |
 | `general` | 일반 요청 |
 
+## 레포 구조
+
+```
+gemini-bridge/
+├── deploy.sh              # WSL + Windows 양쪽 배포 (환경 자동 감지)
+├── src/
+│   ├── bridge.py          # CLI 스크립트 (순수 Python3 stdlib)
+│   ├── SKILL-wsl.md       # WSL Claude Code용 스킬
+│   ├── SKILL-windows.md   # Windows Claude Code용 스킬
+│   ├── GEMINI.md          # Gemini 글로벌 규칙
+│   └── IMPROVEMENTS.md    # 개선 이력
+└── extension/
+    ├── extension.js       # Antigravity 익스텐션
+    ├── package.json
+    └── .vsixmanifest
+```
+
 ## 업그레이드
 
 ```bash
 cd gemini-bridge
-# 파일 수정
+# 파일을 수정합니다
 bash deploy.sh
 # 끝
 ```
