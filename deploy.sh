@@ -58,7 +58,12 @@ deploy_windows() {
     # SKILL-windows.md → ~/.claude/skills/gemini-bridge/SKILL.md
     copy_file "$SCRIPT_DIR/src/SKILL-windows.md" \
               "$win_home/.claude/skills/gemini-bridge/SKILL.md" \
-              "SKILL.md (Windows)"
+              "SKILL.md (Gemini/Windows)"
+
+    # SKILL-codex-windows.md → ~/.claude/skills/gemini-bridge/SKILL-codex.md
+    copy_file "$SCRIPT_DIR/src/SKILL-codex-windows.md" \
+              "$win_home/.claude/skills/gemini-bridge/SKILL-codex.md" \
+              "SKILL-codex.md (Windows)"
 
     # GEMINI.md → ~/.gemini/GEMINI.md
     copy_file "$SCRIPT_DIR/src/GEMINI.md" \
@@ -87,8 +92,13 @@ deploy_windows() {
 
     # SKILL-wsl.md → WSL ~/.claude/skills/gemini-bridge/SKILL.md
     MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/SKILL-wsl.md" "$wsl_skill/SKILL.md"
-    echo "  [OK] SKILL.md (WSL)"
+    echo "  [OK] SKILL.md (Gemini/WSL)"
     echo "       $wsl_skill/SKILL.md"
+
+    # SKILL-codex-wsl.md → WSL ~/.claude/skills/gemini-bridge/SKILL-codex.md
+    MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/SKILL-codex-wsl.md" "$wsl_skill/SKILL-codex.md"
+    echo "  [OK] SKILL-codex.md (WSL)"
+    echo "       $wsl_skill/SKILL-codex.md"
 
     # IMPROVEMENTS.md → WSL ~/.claude/skills/gemini-bridge/IMPROVEMENTS.md
     MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/IMPROVEMENTS.md" "$wsl_skill/IMPROVEMENTS.md"
@@ -122,7 +132,10 @@ deploy_wsl() {
     copy_file "$SCRIPT_DIR/src/bridge.py" "$skill/bridge.py" "bridge.py"
 
     # SKILL-wsl.md → SKILL.md
-    copy_file "$SCRIPT_DIR/src/SKILL-wsl.md" "$skill/SKILL.md" "SKILL.md"
+    copy_file "$SCRIPT_DIR/src/SKILL-wsl.md" "$skill/SKILL.md" "SKILL.md (Gemini)"
+
+    # SKILL-codex-wsl.md → SKILL-codex.md
+    copy_file "$SCRIPT_DIR/src/SKILL-codex-wsl.md" "$skill/SKILL-codex.md" "SKILL-codex.md"
 
     # IMPROVEMENTS.md
     copy_file "$SCRIPT_DIR/src/IMPROVEMENTS.md" "$skill/IMPROVEMENTS.md" "IMPROVEMENTS.md"
