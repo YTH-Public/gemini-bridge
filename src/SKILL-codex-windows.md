@@ -23,7 +23,7 @@ Antigravity IDE의 Codex(ChatGPT)와 통신하는 브릿지. Windows Claude Code
 
 - 모든 명령은 **현재 프로젝트의 bridge/ 디렉토리**를 사용한다.
 - **Windows 경로를 WSL 경로로 변환**하여 전달한다.
-- 스크립트 경로: WSL 내 `~/.claude/skills/gemini-bridge/bridge.py`
+- 스크립트 경로: WSL 내 `~/.claude/skills/agent-bridge/bridge.py`
 - `--target codex` 옵션으로 Codex 모드 지정.
 - **순수 Python3 stdlib** — uv나 pip 의존성 없음.
 - Codex 전송은 `chatgpt.implementTodo` 명령을 통해 이루어진다.
@@ -88,7 +88,7 @@ bridge.py는 메시지가 **500자 초과**이면 자동으로:
 
 ### init 후속 절차 (Claude가 수행)
 
-1. `MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir <wsl-path> init'` 실행
+1. `MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --dir <wsl-path> init'` 실행
 2. 프로젝트의 CLAUDE.md 읽기
 3. (있으면) package.json, pyproject.toml 등 읽기
 4. 파악한 정보로 `bridge/codex-context.md` 내용 채우기 (Write tool)
@@ -110,13 +110,13 @@ WSL_DIR="/mnt/d/project_2026/my-app"
 ### BRIDGE 명령어 템플릿
 
 ```
-BRIDGE="MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --target codex'"
+BRIDGE="MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --target codex'"
 ```
 
 ### 초기화 (init) — 새 프로젝트에서 최초 1회
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir "<WSL경로>" init'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --dir "<WSL경로>" init'
 ```
 
 ### 전송 (send) — 기본 동작
@@ -124,31 +124,31 @@ MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge
 인자가 `init/read/list/search/ask`가 아닐 때:
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --target codex --dir "<WSL경로>" send "<메시지>" --topic "<토픽>"'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --target codex --dir "<WSL경로>" send "<메시지>" --topic "<토픽>"'
 ```
 
 ### 전송 + 대기 (ask)
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --target codex --dir "<WSL경로>" ask "<메시지>" --topic "<토픽>" --timeout 600 --retries 3'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --target codex --dir "<WSL경로>" ask "<메시지>" --topic "<토픽>" --timeout 600 --retries 3'
 ```
 
 ### 읽기 (read)
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir "<WSL경로>" --source codex latest'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --dir "<WSL경로>" --source codex latest'
 ```
 
 ### 목록 (list)
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir "<WSL경로>" --source codex list'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --dir "<WSL경로>" --source codex list'
 ```
 
 ### 검색 (search)
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir "<WSL경로>" --source codex search "<키워드>"'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/agent-bridge/bridge.py --dir "<WSL경로>" --source codex search "<키워드>"'
 ```
 
 ## 새 프로젝트에서 Codex 사용하기

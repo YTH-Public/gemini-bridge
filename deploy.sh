@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy.sh — Gemini Bridge 배포 스크립트
+# deploy.sh — Agent Bridge 배포 스크립트
 # Windows(Git Bash) / WSL 양쪽에서 실행 가능, 환경 자동 감지.
 #
 # Usage: bash deploy.sh
@@ -20,7 +20,7 @@ detect_env() {
 }
 
 ENV="$(detect_env)"
-echo "=== Gemini Bridge Deploy ==="
+echo "=== Agent Bridge Deploy ==="
 echo "Environment: $ENV"
 echo "Source dir:   $SCRIPT_DIR"
 echo ""
@@ -55,14 +55,14 @@ deploy_windows() {
 
     echo "── Windows 배포 ──"
 
-    # SKILL-windows.md → ~/.claude/skills/gemini-bridge/SKILL.md
+    # SKILL-windows.md → ~/.claude/skills/agent-bridge/SKILL.md
     copy_file "$SCRIPT_DIR/src/SKILL-windows.md" \
-              "$win_home/.claude/skills/gemini-bridge/SKILL.md" \
+              "$win_home/.claude/skills/agent-bridge/SKILL.md" \
               "SKILL.md (Gemini/Windows)"
 
-    # SKILL-codex-windows.md → ~/.claude/skills/gemini-bridge/SKILL-codex.md
+    # SKILL-codex-windows.md → ~/.claude/skills/agent-bridge/SKILL-codex.md
     copy_file "$SCRIPT_DIR/src/SKILL-codex-windows.md" \
-              "$win_home/.claude/skills/gemini-bridge/SKILL-codex.md" \
+              "$win_home/.claude/skills/agent-bridge/SKILL-codex.md" \
               "SKILL-codex.md (Windows)"
 
     # GEMINI.md → ~/.gemini/GEMINI.md
@@ -83,24 +83,24 @@ deploy_windows() {
     local wsl_src
     wsl_src="$(to_wsl_path "$SCRIPT_DIR")"
 
-    # bridge.py → WSL ~/.claude/skills/gemini-bridge/bridge.py
-    local wsl_skill="$WSL_HOME/.claude/skills/gemini-bridge"
+    # bridge.py → WSL ~/.claude/skills/agent-bridge/bridge.py
+    local wsl_skill="$WSL_HOME/.claude/skills/agent-bridge"
     MSYS_NO_PATHCONV=1 wsl mkdir -p "$wsl_skill"
     MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/bridge.py" "$wsl_skill/bridge.py"
     echo "  [OK] bridge.py (WSL)"
     echo "       $wsl_skill/bridge.py"
 
-    # SKILL-wsl.md → WSL ~/.claude/skills/gemini-bridge/SKILL.md
+    # SKILL-wsl.md → WSL ~/.claude/skills/agent-bridge/SKILL.md
     MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/SKILL-wsl.md" "$wsl_skill/SKILL.md"
     echo "  [OK] SKILL.md (Gemini/WSL)"
     echo "       $wsl_skill/SKILL.md"
 
-    # SKILL-codex-wsl.md → WSL ~/.claude/skills/gemini-bridge/SKILL-codex.md
+    # SKILL-codex-wsl.md → WSL ~/.claude/skills/agent-bridge/SKILL-codex.md
     MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/SKILL-codex-wsl.md" "$wsl_skill/SKILL-codex.md"
     echo "  [OK] SKILL-codex.md (WSL)"
     echo "       $wsl_skill/SKILL-codex.md"
 
-    # IMPROVEMENTS.md → WSL ~/.claude/skills/gemini-bridge/IMPROVEMENTS.md
+    # IMPROVEMENTS.md → WSL ~/.claude/skills/agent-bridge/IMPROVEMENTS.md
     MSYS_NO_PATHCONV=1 wsl cp "$wsl_src/src/IMPROVEMENTS.md" "$wsl_skill/IMPROVEMENTS.md"
     echo "  [OK] IMPROVEMENTS.md (WSL)"
     echo "       $wsl_skill/IMPROVEMENTS.md"
@@ -125,7 +125,7 @@ deploy_windows() {
 deploy_wsl() {
     echo "── WSL 네이티브 배포 ──"
 
-    local skill="$HOME/.claude/skills/gemini-bridge"
+    local skill="$HOME/.claude/skills/agent-bridge"
     mkdir -p "$skill"
 
     # bridge.py

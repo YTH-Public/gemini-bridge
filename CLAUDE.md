@@ -1,11 +1,11 @@
-# Gemini Bridge
+# Agent Bridge
 
 Claude Code와 Antigravity IDE(Gemini + Codex)를 연결하는 파일 기반 브릿지.
 
 ## 프로젝트 구조
 
 ```
-gemini-bridge/
+agent-bridge/
 ├── deploy.sh                  # 배포 (WSL + Windows 자동 감지)
 ├── src/
 │   ├── bridge.py              # CLI (순수 Python3 stdlib, WSL에서 실행)

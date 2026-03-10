@@ -1,4 +1,4 @@
-# Gemini Bridge
+# Agent Bridge
 
 Claude Code와 Antigravity IDE(Gemini + Codex)를 연결하는 브릿지입니다. 파일 기반 트리거로 Claude에서 Gemini/Codex에게 메시지를 보내고, 응답을 자동으로 수집합니다.
 
@@ -75,8 +75,8 @@ Claude Code                    Antigravity IDE
 ### 1. 클론합니다
 
 ```bash
-git clone https://github.com/YTH-Public/gemini-bridge.git
-cd gemini-bridge
+git clone https://github.com/YTH-Public/agent-bridge.git
+cd agent-bridge
 ```
 
 ### 2. 배포합니다
@@ -95,11 +95,11 @@ Extension이 로드되려면 최초 1회 재시작이 필요합니다. 이후에
 
 | 소스 | WSL | Windows |
 |------|-----|---------|
-| `src/bridge.py` | `~/.claude/skills/gemini-bridge/bridge.py` | — |
-| `src/SKILL-wsl.md` | `~/.claude/skills/gemini-bridge/SKILL.md` | — |
-| `src/SKILL-windows.md` | — | `~/.claude/skills/gemini-bridge/SKILL.md` |
-| `src/SKILL-codex-wsl.md` | `~/.claude/skills/gemini-bridge/SKILL-codex.md` | — |
-| `src/SKILL-codex-windows.md` | — | `~/.claude/skills/gemini-bridge/SKILL-codex.md` |
+| `src/bridge.py` | `~/.claude/skills/agent-bridge/bridge.py` | — |
+| `src/SKILL-wsl.md` | `~/.claude/skills/agent-bridge/SKILL.md` | — |
+| `src/SKILL-windows.md` | — | `~/.claude/skills/agent-bridge/SKILL.md` |
+| `src/SKILL-codex-wsl.md` | `~/.claude/skills/agent-bridge/SKILL-codex.md` | — |
+| `src/SKILL-codex-windows.md` | — | `~/.claude/skills/agent-bridge/SKILL-codex.md` |
 | `src/GEMINI.md` | `~/.gemini/GEMINI.md` | `~/.gemini/GEMINI.md` |
 | `extension/*` | `~/.antigravity-server/extensions/...` | `~/.antigravity/extensions/...` |
 
@@ -162,7 +162,7 @@ Claude가 메시지 내용을 분석하여 적절한 `[TASK: <category>]` 헤더
 ## 레포 구조
 
 ```
-gemini-bridge/
+agent-bridge/
 ├── deploy.sh                  # WSL + Windows 양쪽 배포 (환경 자동 감지)
 ├── src/
 │   ├── bridge.py              # CLI 스크립트 (순수 Python3 stdlib)
@@ -181,7 +181,7 @@ gemini-bridge/
 ## 업그레이드
 
 ```bash
-cd gemini-bridge
+cd agent-bridge
 git pull
 bash deploy.sh
 ```
