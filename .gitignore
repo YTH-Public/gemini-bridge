@@ -21,3 +21,7 @@ __pycache__/
 
 # Git filter-branch backup
 refs/original/
+
+# Bridge 디렉토리 (프로젝트별로 /gemini init 으로 생성)
+bridge/
+.agent/
