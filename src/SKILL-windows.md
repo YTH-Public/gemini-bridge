@@ -133,7 +133,7 @@ MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge
 ### 전송 + 대기 (ask)
 
 ```bash
-MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir "<WSL경로>" ask "<메시지>" --topic "<토픽>" --timeout 180 --retries 3'
+MSYS_NO_PATHCONV=1 wsl -e bash -c 'python3 ~/.claude/skills/gemini-bridge/bridge.py --dir "<WSL경로>" ask "<메시지>" --topic "<토픽>" --timeout 600 --retries 3'
 ```
 
 - `--timeout`: 응답 대기 시간 (초, 기본 180)

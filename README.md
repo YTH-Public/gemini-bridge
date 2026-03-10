@@ -1,13 +1,14 @@
 # Gemini Bridge
 
-Claude Code와 Antigravity IDE(Gemini)를 연결하는 브릿지입니다. 파일 기반 트리거로 Claude에서 Gemini에게 메시지를 보내고, 응답을 자동으로 수집합니다.
+Claude Code와 Antigravity IDE(Gemini + Codex)를 연결하는 브릿지입니다. 파일 기반 트리거로 Claude에서 Gemini/Codex에게 메시지를 보내고, 응답을 자동으로 수집합니다.
 
 ## 왜 만들었나
 
-AI 코딩 에이전트 하나로는 부족할 때가 있습니다. Claude는 코드 작성과 리팩토링에 강하고, Gemini는 웹 검색, 디자인 리뷰, 이미지 생성에 강합니다. 이 브릿지를 통해 두 AI가 하나의 프로젝트에서 협업할 수 있습니다.
+AI 코딩 에이전트 하나로는 부족할 때가 있습니다. Claude는 코드 작성과 리팩토링에 강하고, Gemini는 웹 검색과 디자인 리뷰에, Codex는 코드 리팩토링과 버그 수정에 강합니다. 이 브릿지를 통해 여러 AI가 하나의 프로젝트에서 협업할 수 있습니다.
 
 - Claude가 코드를 작성하다가 디자인 피드백이 필요하면 Gemini에게 요청합니다
 - Gemini의 웹 검색 결과를 Claude가 받아서 코드에 반영합니다
+- 코드 리팩토링이나 테스트 작성은 Codex에게 맡길 수 있습니다
 - 이미지 생성, UI 목업 등 Gemini의 강점을 Claude 워크플로우 안에서 활용합니다
 
 ## 협업 팁
@@ -34,6 +35,16 @@ AI 코딩 에이전트 하나로는 부족할 때가 있습니다. Claude는 코
 | 이미지 생성 | "이 앱의 OG 이미지 만들어줘" |
 | 크로스체크 | "이 API 설계가 RESTful 원칙에 맞는지 확인해줘" |
 
+### Codex에게 맡기면 좋은 작업
+
+| 작업 | 예시 |
+|------|------|
+| 코드 리팩토링 | "이 함수를 더 효율적으로 리팩토링해줘" |
+| 코드 리뷰 | "이 PR 코드 리뷰해줘" |
+| 버그 수정 | "이 에러 원인 찾아서 수정해줘" |
+| 테스트 작성 | "이 모듈의 유닛 테스트 작성해줘" |
+| 문서화 | "이 API의 JSDoc 작성해줘" |
+
 ### 실전 워크플로우 예시
 
 ```
@@ -48,13 +59,13 @@ AI 코딩 에이전트 하나로는 부족할 때가 있습니다. Claude는 코
 ```
 Claude Code                    Antigravity IDE
     │                               │
-    ├─ bridge.py send ──→ .trigger 파일 생성
+    ├─ bridge.py send ──→ .trigger 파일 생성 ──→ Gemini 채팅
     │                               │
-    │                     Extension이 .trigger 감지
+    ├─ bridge.py --target codex ──→ .codex-trigger 생성 ──→ Codex (implementTodo)
     │                               │
-    │                     sendPromptToAgentPanel() ──→ Gemini 채팅
+    │                     Extension이 트리거 감지 → 대상에 전달
     │                               │
-    │                     Gemini 응답 → from-gemini/*.md 저장
+    │                     응답 → from-gemini/*.md / from-codex/*.md 저장
     │                               │
     ├─ bridge.py read ←── .md 파일 읽기
 ```
@@ -64,7 +75,7 @@ Claude Code                    Antigravity IDE
 ### 1. 클론합니다
 
 ```bash
-git clone https://github.com/ms2116/gemini-bridge.git
+git clone https://github.com/YTH-Public/gemini-bridge.git
 cd gemini-bridge
 ```
 
@@ -87,12 +98,16 @@ Extension이 로드되려면 최초 1회 재시작이 필요합니다. 이후에
 | `src/bridge.py` | `~/.claude/skills/gemini-bridge/bridge.py` | — |
 | `src/SKILL-wsl.md` | `~/.claude/skills/gemini-bridge/SKILL.md` | — |
 | `src/SKILL-windows.md` | — | `~/.claude/skills/gemini-bridge/SKILL.md` |
+| `src/SKILL-codex-wsl.md` | `~/.claude/skills/gemini-bridge/SKILL-codex.md` | — |
+| `src/SKILL-codex-windows.md` | — | `~/.claude/skills/gemini-bridge/SKILL-codex.md` |
 | `src/GEMINI.md` | `~/.gemini/GEMINI.md` | `~/.gemini/GEMINI.md` |
 | `extension/*` | `~/.antigravity-server/extensions/...` | `~/.antigravity/extensions/...` |
 
 ## 사용법
 
 Claude Code에서 아래 명령어를 사용합니다:
+
+### Gemini
 
 ```
 /gemini init                    # 프로젝트에 bridge 구조를 초기화합니다
@@ -101,6 +116,17 @@ Claude Code에서 아래 명령어를 사용합니다:
 /gemini read                    # 최신 Gemini 응답을 읽습니다
 /gemini list                    # 응답 목록을 확인합니다
 /gemini search <키워드>         # 키워드로 검색합니다
+```
+
+### Codex
+
+```
+/codex init                     # 프로젝트에 bridge 구조를 초기화합니다
+/codex <메시지>                 # Codex에게 메시지를 전송합니다
+/codex ask <메시지>             # 전송 후 응답을 기다립니다
+/codex read                     # 최신 Codex 응답을 읽습니다
+/codex list                     # 응답 목록을 확인합니다
+/codex search <키워드>          # 키워드로 검색합니다
 ```
 
 ## 주요 기능
@@ -137,15 +163,17 @@ Claude가 메시지 내용을 분석하여 적절한 `[TASK: <category>]` 헤더
 
 ```
 gemini-bridge/
-├── deploy.sh              # WSL + Windows 양쪽 배포 (환경 자동 감지)
+├── deploy.sh                  # WSL + Windows 양쪽 배포 (환경 자동 감지)
 ├── src/
-│   ├── bridge.py          # CLI 스크립트 (순수 Python3 stdlib)
-│   ├── SKILL-wsl.md       # WSL Claude Code용 스킬
-│   ├── SKILL-windows.md   # Windows Claude Code용 스킬
-│   ├── GEMINI.md          # Gemini 글로벌 규칙
-│   └── IMPROVEMENTS.md    # 개선 이력
+│   ├── bridge.py              # CLI 스크립트 (순수 Python3 stdlib)
+│   ├── SKILL-wsl.md           # WSL Claude Code용 Gemini 스킬
+│   ├── SKILL-windows.md       # Windows Claude Code용 Gemini 스킬
+│   ├── SKILL-codex-wsl.md     # WSL Claude Code용 Codex 스킬
+│   ├── SKILL-codex-windows.md # Windows Claude Code용 Codex 스킬
+│   ├── GEMINI.md              # Gemini 글로벌 규칙
+│   └── IMPROVEMENTS.md        # 개선 이력
 └── extension/
-    ├── extension.js       # Antigravity 익스텐션
+    ├── extension.js           # Antigravity 익스텐션 (Gemini + Codex)
     ├── package.json
     └── .vsixmanifest
 ```
@@ -162,6 +190,16 @@ bash deploy.sh
 ## 요구사항
 
 - Claude Code (WSL 또는 Windows)
-- Antigravity IDE (Gemini 에이전트 활성)
+- Antigravity IDE (Gemini 에이전트 활성, Codex 사용 시 Codex 익스텐션 설치)
 - Python 3 (WSL)
 - Git Bash (Windows)
+
+## 설정 커스터마이즈
+
+`deploy.sh` 상단의 변수를 환경에 맞게 수정합니다:
+
+```bash
+EXT_PUBLISHER="yth1133"    # Antigravity 퍼블리셔명 (본인 것으로 변경)
+EXT_NAME="claude-bridge"   # 익스텐션 이름
+EXT_VERSION="0.2.0"        # 익스텐션 버전
+```

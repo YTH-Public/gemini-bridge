@@ -1,20 +1,22 @@
 # Gemini Bridge
 
-Claude Code와 Antigravity IDE(Gemini)를 연결하는 파일 기반 브릿지.
+Claude Code와 Antigravity IDE(Gemini + Codex)를 연결하는 파일 기반 브릿지.
 
 ## 프로젝트 구조
 
 ```
 gemini-bridge/
-├── deploy.sh              # 배포 (WSL + Windows 자동 감지)
+├── deploy.sh                  # 배포 (WSL + Windows 자동 감지)
 ├── src/
-│   ├── bridge.py          # CLI (순수 Python3 stdlib, WSL에서 실행)
-│   ├── SKILL-wsl.md       # WSL Claude Code용 스킬
-│   ├── SKILL-windows.md   # Windows Claude Code용 스킬
-│   ├── GEMINI.md          # Gemini 글로벌 규칙
-│   └── IMPROVEMENTS.md    # 개선 이력 + Sprint Backlog
+│   ├── bridge.py              # CLI (순수 Python3 stdlib, WSL에서 실행)
+│   ├── SKILL-wsl.md           # WSL Claude Code용 Gemini 스킬
+│   ├── SKILL-windows.md       # Windows Claude Code용 Gemini 스킬
+│   ├── SKILL-codex-wsl.md     # WSL Claude Code용 Codex 스킬
+│   ├── SKILL-codex-windows.md # Windows Claude Code용 Codex 스킬
+│   ├── GEMINI.md              # Gemini 글로벌 규칙
+│   └── IMPROVEMENTS.md        # 개선 이력 + Sprint Backlog
 └── extension/
-    ├── extension.js       # Antigravity 익스텐션
+    ├── extension.js           # Antigravity 익스텐션 (Gemini + Codex)
     ├── package.json
     └── .vsixmanifest
 ```
@@ -43,10 +45,12 @@ gemini-bridge/
 - README.md: 합니다 존댓말 톤
 - IMPROVEMENTS.md: 해결된 이슈 / 미해결 Sprint Backlog 구분 유지
 - SKILL-wsl.md와 SKILL-windows.md: 동일 기능이지만 실행 경로가 다름 — 기능 변경 시 양쪽 모두 수정
+- SKILL-codex-wsl.md와 SKILL-codex-windows.md: Codex 스킬도 동일 — 기능 변경 시 양쪽 모두 수정
 
 ## 테스트
 
 변경 후 확인 사항:
 1. `bash deploy.sh` 성공
-2. Windows에서 `/gemini 테스트` → trigger 파일 생성 확인
-3. Antigravity에서 trigger 감지 → Gemini 채팅 전달 확인
+2. Windows에서 `/gemini 테스트` → .trigger 파일 생성 확인
+3. Windows에서 `/codex 테스트` → .codex-trigger 파일 생성 확인
+4. Antigravity에서 trigger 감지 → Gemini/Codex 채팅 전달 확인

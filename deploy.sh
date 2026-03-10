@@ -47,7 +47,7 @@ WSL_HOME="/home/$(MSYS_NO_PATHCONV=1 wsl whoami 2>/dev/null || echo '$USER')"
 # 익스텐션 publisher.name
 EXT_PUBLISHER="yth1133"
 EXT_NAME="claude-bridge"
-EXT_VERSION="0.1.0"
+EXT_VERSION="0.2.0"
 
 # ── Windows (Git Bash) 배포 ───────────────────────────────
 deploy_windows() {
