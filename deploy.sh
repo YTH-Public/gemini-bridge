@@ -76,6 +76,25 @@ deploy_windows() {
     copy_file "$SCRIPT_DIR/extension/package.json"  "$ext_dst/package.json"  "package.json (Windows)"
     copy_file "$SCRIPT_DIR/extension/.vsixmanifest"  "$ext_dst/.vsixmanifest"  ".vsixmanifest (Windows)"
 
+    # extensions.json 업데이트 (Antigravity가 익스텐션을 인식하도록)
+    local ext_json="$win_home/.antigravity/extensions/extensions.json"
+    local ext_id="${EXT_PUBLISHER}.${EXT_NAME}"
+    local ext_rel="${EXT_PUBLISHER}.${EXT_NAME}-${EXT_VERSION}-universal"
+    if [ -f "$ext_json" ]; then
+        if grep -q "\"id\":\"${ext_id}\"" "$ext_json"; then
+            # 기존 항목의 버전과 경로를 업데이트
+            sed -i "s|\"${EXT_PUBLISHER}\.${EXT_NAME}-[0-9.]*-universal\"|\"${ext_rel}\"|g" "$ext_json"
+            sed -i "s|\"version\":\"[0-9.]*\",\"location\":{\"\\$mid\":1,\"path\":\"/c:/Users/[^\"]*/${ext_rel}\"|\"version\":\"${EXT_VERSION}\",\"location\":{\"\\$mid\":1,\"path\":\"/c:/Users/${USERNAME}/.antigravity/extensions/${ext_rel}\"|" "$ext_json"
+            echo "  [OK] extensions.json 업데이트"
+        else
+            # 새 항목 추가
+            local entry="{\"identifier\":{\"id\":\"${ext_id}\"},\"version\":\"${EXT_VERSION}\",\"location\":{\"\$mid\":1,\"path\":\"/c:/Users/${USERNAME}/.antigravity/extensions/${ext_rel}\",\"scheme\":\"file\"},\"relativeLocation\":\"${ext_rel}\",\"metadata\":{\"installedTimestamp\":$(date +%s)000,\"pinned\":false,\"source\":\"gallery\",\"targetPlatform\":\"universal\",\"updated\":false,\"private\":false,\"isPreReleaseVersion\":false,\"hasPreReleaseVersion\":false}}"
+            # 마지막 ] 앞에 추가
+            sed -i "s|\\]$|,${entry}]|" "$ext_json"
+            echo "  [OK] extensions.json 새 항목 추가"
+        fi
+    fi
+
     echo ""
     echo "── WSL 배포 (via wsl) ──"
 
