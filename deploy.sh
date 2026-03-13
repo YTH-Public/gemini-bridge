@@ -138,6 +138,30 @@ deploy_windows() {
         echo "  [OK] $f (WSL)"
         echo "       $wsl_ext/$f"
     done
+
+    # WSL extensions.json 업데이트
+    local wsl_ext_json="$WSL_HOME/.antigravity-server/extensions/extensions.json"
+    local wsl_ext_rel="${EXT_PUBLISHER}.${EXT_NAME}-${EXT_VERSION}"
+    MSYS_NO_PATHCONV=1 wsl -e bash -c '
+        EXT_JSON="'"$wsl_ext_json"'"
+        EXT_ID="'"${ext_id}"'"
+        EXT_VER="'"${EXT_VERSION}"'"
+        EXT_REL="'"${wsl_ext_rel}"'"
+        EXT_PUB="'"${EXT_PUBLISHER}"'"
+        EXT_NM="'"${EXT_NAME}"'"
+        WSL_HOME_DIR="'"${WSL_HOME}"'"
+        if [ -f "$EXT_JSON" ]; then
+            if grep -q "\"id\":\"${EXT_ID}\"" "$EXT_JSON"; then
+                sed -i "s|${EXT_PUB}\.${EXT_NM}-[0-9.]*|${EXT_REL}|g" "$EXT_JSON"
+                sed -i "s|\"version\":\"[0-9.]*\",\"location\":{|\"version\":\"${EXT_VER}\",\"location\":{|g" "$EXT_JSON"
+                echo "  [OK] extensions.json 업데이트 (WSL)"
+            else
+                ENTRY="{\"identifier\":{\"id\":\"${EXT_ID}\"},\"version\":\"${EXT_VER}\",\"location\":{\"\$mid\":1,\"path\":\"${WSL_HOME_DIR}/.antigravity-server/extensions/${EXT_REL}\",\"scheme\":\"file\"},\"relativeLocation\":\"${EXT_REL}\",\"metadata\":{\"installedTimestamp\":$(date +%s)000,\"pinned\":false,\"source\":\"gallery\",\"targetPlatform\":\"universal\",\"updated\":false,\"private\":false,\"isPreReleaseVersion\":false,\"hasPreReleaseVersion\":false}}"
+                sed -i "s|\\]$|,${ENTRY}]|" "$EXT_JSON"
+                echo "  [OK] extensions.json 새 항목 추가 (WSL)"
+            fi
+        fi
+    '
 }
 
 # ── WSL 네이티브 배포 ─────────────────────────────────────
