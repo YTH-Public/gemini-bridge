@@ -182,6 +182,29 @@ Claude Code에서 아래 명령어를 사용합니다:
 
 ## 주요 기능
 
+### 병렬 전송 (Gemini + Codex 동시)
+
+Gemini와 Codex에게 동시에 메시지를 보낼 수 있습니다. "제미나이와 코덱스 둘 다 보내줘"라고 하면 Claude가 자동으로 병렬 전송합니다.
+
+```
+/gemini 이 UI 디자인 리뷰해줘     # 즉시 전송 (논블로킹)
+/codex 이 코드 리팩토링해줘        # 즉시 전송 (논블로킹)
+```
+
+`status` 커맨드로 양쪽 응답 상태를 한눈에 확인합니다:
+```
+Gemini: ✅ from-gemini/2026-03-14_01-30_ui-review.md (2분 전)
+Codex:  ⏳ 응답 대기 중
+```
+
+### WSL Remote 지원
+
+Antigravity를 WSL Remote로 연결해도 브릿지가 동작합니다. 익스텐션이 `extensionKind: ["workspace"]`로 설정되어 WSL 쪽에서 직접 실행됩니다.
+
+### 한글 별칭
+
+"제미나이", "코덱스", "챗지피티" 등 한글로 부를 수도 있습니다.
+
 ### 자동 재시도 (Auto-Continue)
 
 Gemini가 에러로 멈추면 자동으로 "continue"를 보내 복구합니다.

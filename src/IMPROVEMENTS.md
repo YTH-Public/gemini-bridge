@@ -1,6 +1,33 @@
-# Gemini Bridge 개선사항
+# Agent Bridge 개선사항
 
 ## 해결됨
+
+### 5. WSL Remote 지원 + extensions.json 안정화
+- **해결일**: 2026-03-13
+- **증상**: WSL Remote에서 Claude Bridge 익스텐션이 로드 안 됨, deploy.sh의 sed가 extensions.json을 손상시킴
+- **해결**:
+  - `package.json`에 `extensionKind: ["workspace"]` 추가 → WSL Remote에서 익스텐션 실행
+  - deploy.sh의 extensions.json 업데이트를 sed → Python(`json` 모듈)으로 교체
+  - WSL extensions.json 깨진 것 Python으로 복구
+
+### 6. 병렬 전송 + status 커맨드
+- **해결일**: 2026-03-13
+- **증상**: Gemini와 Codex 동시 전송 시 하나가 블로킹되어 순차 실행됨
+- **해결**:
+  - `send` (논블로킹) + `status` (양쪽 응답 확인) 패턴 도입
+  - SKILL 파일에 병렬 전송 가이드 추가
+
+### 7. Gemini/Codex 규칙 분리
+- **해결일**: 2026-03-13
+- **증상**: Codex가 Gemini 전용 bridge-output.md를 읽고 "마크다운 저장이 내 역할"로 착각
+- **해결**:
+  - `BRIDGE_OUTPUT_RULE` → Gemini 전용 명시
+  - `CODEX_OUTPUT_RULE` 신규 추가
+  - `cmd_init()`에서 `.agent/rules/codex-output.md` 도 생성
+
+### 8. 한글 별칭 지원
+- **해결일**: 2026-03-13
+- **해결**: SKILL description에 "제미나이", "코덱스", "챗지피티" 별칭 추가
 
 ### 1. Antigravity 에러 시 자동 재시도 없음
 - **발견일**: 2026-02-24
