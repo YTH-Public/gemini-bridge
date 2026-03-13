@@ -22,14 +22,14 @@ from pathlib import Path
 from typing import Optional
 
 BRIDGE_OUTPUT_RULE = """\
-# Bridge Output Rule
+# Bridge Output Rule — Gemini 전용
 
-## 핵심 규칙: 모든 응답을 bridge 디렉토리에 자동 저장
+> **이 규칙은 Gemini 에이전트 전용입니다.** Codex는 `codex-output.md`를 참조하세요.
 
-당신(Gemini)은 이 워크스페이스에서 응답할 때마다, 반드시 해당 응답을 마크다운 파일로 저장해야 합니다.
+## 1. 응답 저장 (모든 작업의 기본)
 
-### 저장 위치
-`bridge/from-gemini/` 디렉토리에 저장합니다.
+모든 실질적 응답은 `bridge/from-gemini/`에 마크다운 파일로 저장합니다.
+이것은 리뷰든, 코드 구현이든, 조사든 **어떤 작업이든 항상** 수행하는 기본 동작입니다.
 
 ### 파일명 규칙
 ```
@@ -55,32 +55,124 @@ source: gemini
 (응답 본문)
 ```
 
-### 태스크 카테고리별 응답 가이드
+## 2. 소스 코드 수정 — 명시적 요청이 있을 때만
+
+### 중요: 언제 코드를 수정하고 언제 하지 않는가
+
+| 요청 유형 | 예시 | 코드 수정 | 마크다운 저장 |
+|----------|------|----------|-------------|
+| **구현/수정 요청** | "구현해줘", "수정해줘", "리팩토링해줘", "만들어줘", "바꿔줘" | O (1순위) | O (작업 요약) |
+| **리뷰/분석 요청** | "리뷰해줘", "이 구조 어떻게 생각해?", "문제점 분석해줘" | X | O (분석 결과) |
+| **의견/제안 요청** | "어떻게 하면 좋을까?", "설계 방향 제안해줘" | X | O (의견/제안) |
+| **조사 요청** | "이 라이브러리 비교해줘", "트렌드 조사해줘" | X | O (조사 결과) |
+
+- **명시적 구현 지시가 있을 때만** 소스 파일을 직접 수정합니다.
+- **구현을 요청받지 않았는데 자의적으로 소스 파일을 수정하지 마세요.**
+- 애매한 경우: 코드를 수정하지 않고, 마크다운에 "이렇게 바꾸면 어떨까" 제안 형태로 작성합니다.
+
+### 코드 수정이 포함된 작업의 흐름
+1. **소스 파일 직접 수정** (이것이 1순위)
+2. `bridge/from-gemini/`에 **작업 요약** 마크다운 저장 (무엇을 왜 어떻게 바꿨는지)
+
+### 코드 수정이 없는 작업의 흐름
+1. `bridge/from-gemini/`에 응답 마크다운 저장 (이것만으로 완료)
+
+## 3. 태스크 카테고리별 응답 가이드
 
 Claude가 `[TASK: <category>]` 헤더를 붙여 보내면, 해당 카테고리에 맞는 응답을 작성합니다.
 
-| 카테고리 | 응답에 포함할 것 |
-|---------|----------------|
-| `design-review` | 구체적 개선 포인트 (색상, 간격, 타이포, 레이아웃), before/after 비교, Tailwind 클래스 제안 |
-| `design-create` | HTML/Tailwind 목업 코드, 색상 팔레트, 레이아웃 구조도 |
-| `web-research` | 출처 URL 포함, 비교표, 핵심 요약, 적용 권장사항 |
-| `image-generate` | 생성된 이미지를 bridge/from-gemini/ 에 저장 |
-| `verify-check` | 체크 항목별 pass/fail, 스크린샷, 개선 필요 사항 |
-| `general` | 자유 형식 |
+| 카테고리 | 응답에 포함할 것 | 코드 수정 여부 |
+|---------|----------------|--------------|
+| `design-review` | 개선 포인트, before/after 비교, Tailwind 클래스 제안 | 명시 요청 시만 |
+| `design-create` | HTML/Tailwind 목업 코드, 색상 팔레트, 레이아웃 구조도 | 명시 요청 시만 |
+| `web-research` | 출처 URL, 비교표, 핵심 요약, 적용 권장사항 | 안 함 |
+| `image-generate` | 생성된 이미지를 bridge/from-gemini/에 저장 | 안 함 |
+| `verify-check` | 체크 항목별 pass/fail, 스크린샷, 개선 필요 사항 | 안 함 |
+| `implement` | 구현 결과 요약 + 변경 파일 목록 | **함** |
+| `general` | 자유 형식 | 명시 요청 시만 |
 
-### 프로젝트 컨텍스트
+## 4. 프로젝트 컨텍스트
 
-`bridge/gemini-context.md` 파일에 이 프로젝트의 기술 스택, 디자인 시스템, Gemini 역할이 정의되어 있습니다.
+`bridge/gemini-context.md`에 이 프로젝트의 기술 스택, 디자인 시스템, Gemini 역할이 정의되어 있습니다.
 요청에 `[CONTEXT]` 섹션이 포함되면 참고하여 프로젝트에 맞는 응답을 작성합니다.
 
-### 규칙
-1. **모든** 실질적 응답에 대해 파일을 생성합니다 (단순 인사나 확인 응답 제외)
-2. 수식이 포함된 경우 LaTeX 형식으로 작성합니다
-3. 코드가 포함된 경우 적절한 언어 태그로 코드 블록을 사용합니다
+## 5. 기타 규칙
+1. 단순 인사나 확인 응답은 파일 저장 불필요
+2. 수식 → LaTeX 형식
+3. 코드 → 적절한 언어 태그의 코드 블록
 4. 파일 저장 후 사용자에게 저장 완료를 알립니다
 
-### 목적
+## 목적
 이 파일들은 Claude Code가 읽어서 활용합니다. Gemini의 응답을 Claude가 참조할 수 있도록 하는 브릿지 역할입니다.
+"""
+
+CODEX_OUTPUT_RULE = """\
+# Bridge Output Rule — Codex 전용
+
+> **이 규칙은 Codex 에이전트 전용입니다.** Gemini는 `bridge-output.md`를 참조하세요.
+
+## 1. 응답 저장 (모든 작업의 기본)
+
+모든 실질적 응답은 `bridge/from-codex/`에 마크다운 파일로 저장합니다.
+이것은 리뷰든, 코드 구현이든, 조사든 **어떤 작업이든 항상** 수행하는 기본 동작입니다.
+
+### 파일명 규칙
+```
+YYYY-MM-DD_HH-MM_주제요약.md
+```
+- 타임스탬프는 현재 시각 기준
+- 주제요약은 영문 kebab-case, 최대 5단어
+
+### 파일 형식
+```markdown
+---
+timestamp: "YYYY-MM-DDTHH:MM:SS"
+topic: "주제 한줄 요약 (한국어)"
+tags: [관련, 태그, 목록]
+query: "원래 질문 요약"
+task: "<태스크 카테고리>"
+source: codex
+---
+
+# 제목
+
+(응답 본문)
+```
+
+## 2. 소스 코드 수정 — 명시적 요청이 있을 때만
+
+### 중요: 언제 코드를 수정하고 언제 하지 않는가
+
+| 요청 유형 | 예시 | 코드 수정 | 마크다운 저장 |
+|----------|------|----------|-------------|
+| **구현/수정 요청** | "구현해줘", "수정해줘", "리팩토링해줘", "만들어줘", "바꿔줘" | O (1순위) | O (작업 요약) |
+| **리뷰/분석 요청** | "리뷰해줘", "이 구조 어떻게 생각해?", "문제점 분석해줘" | X | O (분석 결과) |
+| **의견/제안 요청** | "어떻게 하면 좋을까?", "설계 방향 제안해줘" | X | O (의견/제안) |
+| **조사 요청** | "이 라이브러리 비교해줘", "트렌드 조사해줘" | X | O (조사 결과) |
+
+- **명시적 구현 지시가 있을 때만** 소스 파일을 직접 수정합니다.
+- **구현을 요청받지 않았는데 자의적으로 소스 파일을 수정하지 마세요.**
+- 애매한 경우: 코드를 수정하지 않고, 마크다운에 "이렇게 바꾸면 어떨까" 제안 형태로 작성합니다.
+
+### 코드 수정이 포함된 작업의 흐름
+1. **소스 파일 직접 수정** (이것이 1순위 — 마크다운 저장이 본업이 아닙니다)
+2. `bridge/from-codex/`에 **작업 요약** 마크다운 저장 (무엇을 왜 어떻게 바꿨는지, 변경 파일 목록)
+
+### 코드 수정이 없는 작업의 흐름
+1. `bridge/from-codex/`에 응답 마크다운 저장 (이것만으로 완료)
+
+## 3. 프로젝트 컨텍스트
+
+`bridge/gemini-context.md` 또는 `bridge/codex-context.md`에 프로젝트 정보가 있습니다.
+요청에 `[CONTEXT]` 섹션이 포함되면 참고하여 프로젝트에 맞는 응답을 작성합니다.
+
+## 4. 기타 규칙
+1. 단순 인사나 확인 응답은 파일 저장 불필요
+2. 코드 → 적절한 언어 태그의 코드 블록
+3. 파일 저장 후 사용자에게 저장 완료를 알립니다
+
+## 목적
+이 파일들은 Claude Code가 읽어서 활용합니다. Codex의 응답을 Claude가 참조할 수 있도록 하는 브릿지 역할입니다.
 """
 
 GEMINI_CONTEXT_SKELETON = """\
@@ -186,10 +278,15 @@ def cmd_init(args, bridge_dir_override=None):
         if not gitkeep.exists():
             gitkeep.touch()
 
-    # bridge-output.md 규칙 (항상 최신으로 덮어쓰기)
+    # bridge-output.md 규칙 — Gemini 전용 (항상 최신으로 덮어쓰기)
     rule_file = agent_rules / "bridge-output.md"
     rule_file.write_text(BRIDGE_OUTPUT_RULE, encoding="utf-8")
     print(f"  {'업데이트' if rule_file.exists() else '생성'}: {rule_file.relative_to(base)}")
+
+    # codex-output.md 규칙 — Codex 전용 (항상 최신으로 덮어쓰기)
+    codex_rule_file = agent_rules / "codex-output.md"
+    codex_rule_file.write_text(CODEX_OUTPUT_RULE, encoding="utf-8")
+    print(f"  {'업데이트' if codex_rule_file.exists() else '생성'}: {codex_rule_file.relative_to(base)}")
 
     # gemini-context.md 스켈레톤 (없을 때만 생성)
     project_name = base.name
@@ -220,7 +317,8 @@ def cmd_init(args, bridge_dir_override=None):
     print(f"   bridge/from-claude/       — Claude 요청 저장소 (.trigger / .codex-trigger)")
     print(f"   bridge/gemini-context.md  — 프로젝트 컨텍스트 (Gemini용)")
     print(f"   bridge/codex-context.md   — 프로젝트 컨텍스트 (Codex용)")
-    print(f"   .agent/rules/bridge-output.md — Antigravity 규칙")
+    print(f"   .agent/rules/bridge-output.md — Gemini 규칙")
+    print(f"   .agent/rules/codex-output.md  — Codex 규칙")
 
 
 def cmd_latest(args):
