@@ -25,6 +25,13 @@
   - `CODEX_OUTPUT_RULE` 신규 추가
   - `cmd_init()`에서 `.agent/rules/codex-output.md` 도 생성
 
+### 9. Windows에서 Codex 패널 안 보이는 문제 ⚠️
+- **해결일**: 2026-03-16
+- **증상**: Windows Antigravity에서 Codex 익스텐션이 설치·활성화 상태인데 패널이 Activity Bar에 안 뜸. WSL Remote에서는 정상 표시
+- **원인**: Codex 익스텐션의 `viewsContainers`에 `when: "chatgpt.doesNotSupportSecondarySidebar"` 조건이 있어서, Secondary Sidebar 지원하는 Antigravity에서는 우측 Secondary Sidebar에만 등록됨. Gemini Agent 패널과 겹쳐 보이지 않음
+- **해결**: deploy.sh에서 Codex 익스텐션 package.json의 `when` 조건을 자동 제거 → 항상 좌측 Activity Bar에 표시
+- **주의**: Codex 익스텐션 업데이트 시 패치가 초기화됨 → `bash deploy.sh` 재실행 필요
+
 ### 8. 한글 별칭 지원
 - **해결일**: 2026-03-13
 - **해결**: SKILL description에 "제미나이", "코덱스", "챗지피티" 별칭 추가
