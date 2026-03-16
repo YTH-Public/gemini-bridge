@@ -267,6 +267,18 @@ bash deploy.sh
 - Python 3 (WSL)
 - Git Bash (Windows)
 
+## 트러블슈팅
+
+### Windows에서 Codex 패널이 안 보이는 경우
+
+Codex 익스텐션이 Secondary Sidebar에 등록되면서 Gemini Agent 패널과 겹쳐 보이지 않을 수 있습니다. `bash deploy.sh`를 실행하면 자동으로 Codex 패널을 좌측 Activity Bar로 이동시킵니다.
+
+수동으로 해결하려면 Codex 익스텐션의 `package.json`에서 `viewsContainers.activitybar`의 `when` 조건을 삭제합니다.
+
+### WSL Remote에서 익스텐션이 안 보이는 경우
+
+Antigravity를 WSL Remote로 연결했을 때 Claude Bridge가 안 보이면 `bash deploy.sh`를 다시 실행하세요. WSL 쪽 `extensions.json`이 자동으로 업데이트됩니다.
+
 ## 설정 커스터마이즈
 
 `deploy.sh` 상단의 변수를 환경에 맞게 수정합니다:

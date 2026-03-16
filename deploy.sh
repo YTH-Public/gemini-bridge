@@ -93,6 +93,35 @@ with open(fp, 'w') as f: json.dump(data, f, separators=(',',':'))
         echo "  [OK] extensions.json 업데이트"
     fi
 
+    # Codex 익스텐션 패치: Secondary Sidebar → Activity Bar 강제 이동
+    # Antigravity가 Secondary Sidebar를 지원하면 Codex 패널이 Gemini와 겹쳐서 안 보임
+    local codex_ext_dir
+    codex_ext_dir="$(ls -d "$win_home/.antigravity/extensions/openai.chatgpt-"* 2>/dev/null | head -1)"
+    if [ -n "$codex_ext_dir" ] && [ -f "$codex_ext_dir/package.json" ]; then
+        py -c "
+import json, sys
+fp = sys.argv[1]
+with open(fp, 'r', encoding='utf-8') as f: d = json.load(f)
+changed = False
+vc = d.get('contributes',{}).get('viewsContainers',{})
+for item in vc.get('activitybar',[]):
+    if 'codex' in item.get('id','').lower() and 'when' in item:
+        del item['when']; changed = True
+for item in vc.get('secondarySidebar',[]):
+    if 'codex' in item.get('id','').lower() and item.get('when') != 'false':
+        item['when'] = 'false'; changed = True
+for vlist in d.get('contributes',{}).get('views',{}).values():
+    for v in vlist:
+        if 'chatgpt' in v.get('id','').lower() and 'doesNotSupportSecondarySidebar' in v.get('when',''):
+            del v['when']; changed = True
+if changed:
+    with open(fp, 'w', encoding='utf-8') as f: json.dump(d, f, indent=2, ensure_ascii=False)
+    print('  [OK] Codex 패널 → Activity Bar 패치')
+else:
+    print('  [OK] Codex 패널 패치 불필요 (이미 적용됨)')
+" "$codex_ext_dir/package.json"
+    fi
+
     echo ""
     echo "── WSL 배포 (via wsl) ──"
 
